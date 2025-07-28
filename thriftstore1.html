@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Thrift Ease - Online Thrift Store</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fefefe;
+      color: #333;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: #333;
+      padding: 10px 15px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .left-icons, .right-icons {
+      display: flex;
+      align-items: center;
+    }
+
+    .hamburger, .cart-btn, .search-icon {
+      background: none;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: white;
+      margin-right: 10px;
+    }
+
+    .page-title {
+      font-weight: bold;
+      font-size: 18px;
+      color: white;
+    }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .search-input {
+      width: 0;
+      padding: 6px 10px;
+      margin-left: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      opacity: 0;
+      transition: width 0.3s ease, opacity 0.3s ease;
+    }
+
+    .search-container.active .search-input {
+      width: 160px;
+      opacity: 1;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -220px;
+      width: 200px;
+      height: 100%;
+      background-color: #333;
+      color: white;
+      padding-top: 60px;
+      transition: left 0.3s ease;
+      z-index: 999;
+    }
+
+    .sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .sidebar ul li {
+      padding: 15px 20px;
+      cursor: pointer;
+    }
+
+    .sidebar ul li:hover {
+      background-color: #444;
+    }
+
+    .sidebar ul li a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .content-section {
+      display: none;
+      padding: 20px;
+    }
+
+    .active-section {
+      display: block;
+    }
+
+    .hero {
+      background-color: #f4f4f4;
+      text-align: center;
+      padding: 50px 20px;
+    }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 15px;
+      text-align: center;
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card:hover {
+      transform: scale(1.05);
+    }
+
+    .card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      padding: 10px 0;
+      min-height: 48px;
+      color: #333;
+    }
+
+    .card-footer {
+      margin-top: auto;
+      padding: 10px 0 0;
+    }
+
+    .card-footer p {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #222;
+    }
+
+    .add-to-cart-btn {
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .add-to-cart-btn:hover {
+      background-color: #e64a19;
+      transform: scale(1.05);
+    }
+
+    form input, form button, form textarea {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 15px;
+      background-color: #333;
+      color: white;
+      margin-top: 30px;
+    }
+
+    .form-container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: #f7f7f7;
+      padding: 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .forgot-password {
+      display: block;
+      text-align: center;
+      margin: 5px 0 15px;
+      font-size: 14px;
+      color: #007bff;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .forgot-password:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="left-icons">
+      <button class="hamburger" onclick="toggleMenu()">☰</button>
+    </div>
+    <div class="page-title">Thrift Ease</div>
+    <div class="right-icons">
+      <div class="search-container" id="searchBox">
+        <button class="search-icon" onclick="toggleSearch()">🔍</button>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search...">
+      </div>
+      <button class="cart-btn" onclick="alert('Cart clicked!')">🛒</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul>
+      <li onclick="showSection('home')">🏠 Home</li>
+      <li onclick="showSection('login')">🔐 Login</li>
+      <li onclick="showSection('about')">ℹ️ About</li>
+      <li onclick="showSection('contact')">📞 Contact Us</li>
+    </ul>
+  </div>
+
+  <!-- Home Section -->
+  <div id="home" class="content-section active-section">
+    <div class="hero">
+      <h1>IMPRESS WITHOUT STRESS</h1>
+      <p>SHOP OUR THRIFT CLOTHING SELECTION FOR CHIC, AFFORDABLE, AND ECO-CONSCIOUS FASHION. BE STYLISH AND SAVE THE ENVIRONMENT!</p>
+    </div>
+
+    <div class="products">
+      <!-- Example 5 Product Cards -->
+      <div class="card" >
+        <img src="C:\Users\arunk\Downloads\F2F ACTIVEWEAR SPORT T-SHIRT – MEDIUM.jpg" alt="F2F ACTIVEWEAR SPORT T-SHIRT">
+        <h3>F2F ACTIVEWEAR SPORT T-SHIRT – MEDIUM</h3>
+        <div class="card-footer">
+        <p>₹299.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+         </div>
+  </button>
+      </div>
+      <div class="card">
+        <img src="C:\Users\arunk\Downloads\GUESS LOS ANGELES COTTON POLO T-SHIRT – XL.jpg">
+        <h3>GUESS LOS ANGELES COTTON POLO T-SHIRT</h3>
+        <div class="card-footer">
+        <p>₹299.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+
+      </div>
+      <div class="card">
+        <img src="C:\Users\arunk\Downloads\GUESS COTTON POLO T-SHIRT – XL.jpg">
+        <h3>GUESS COTTON POLO T-SHIRT</h3>
+        <div class="card-footer">
+        <p>₹299.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+
+      </div>
+            <div class="card">
+        <img src="C:\Users\arunk\Downloads\Adidas activewear zipper T-shirt – XL.jpg">
+        <h3>Adidas activewear zipper T-shirt</h3>
+        <div class="card-footer">
+        <p>₹499.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+            <div class="card">
+        <img src="C:\Users\arunk\Downloads\ADIDAS CHELSEA MENS SOCCER FOOTBALL JERSEY – XL.jpg">
+        <h3>ADIDAS CHELSEA MENS SOCCER FOOTBALL JERSEY</h3>
+        <div class="card-footer">
+        <p>₹699.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+            <div class="card">
+        <img src="C:\Users\arunk\Downloads\Adidas CLIMALITE sports T-shirt -XL.jpg">
+        <h3>Adidas CLIMALITE sports T-shirt -XL</h3>
+        <div class="card-footer">
+        <p>₹499.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+    </div>
+            <div class="card">
+        <img src="C:\Users\arunk\Downloads\NY CAP.jpg">
+        <h3>NY CAP</h3>
+        <div class="card-footer">
+        <p>₹299.00</p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+            <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Fila cap.jpg" >
+        <h3> Fila cap </h3>
+        <div class="card-footer">
+        <p> ₹299.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=   "C:\Users\arunk\Downloads\Adidas originals cap.jpg">
+        <h3> Adidas originals cap </h3>
+        <div class="card-footer">
+        <p>  ₹299.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\KOLON outdoor backpack.jpg" >
+        <h3> KOLON outdoor backpack </h3>
+        <div class="card-footer">
+        <p> ₹999.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+    </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Kappa outdoor backpack.jpg" >
+        <h3>Kappa outdoor backpack </h3>
+        <div class="card-footer">
+        <p>₹999.00   </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src= "C:\Users\arunk\Downloads\Adidas backpack.jpg"  >
+        <h3> Adidas backpack </h3>
+        <div class="card-footer">
+        <p> ₹799.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\CALVIN KLEIN STRETCHABLE JEANS PANTS- W36 L42.jpg" >
+        <h3> CALVIN KLEIN STRETCHABLE JEANS PANTS- W36 L42 </h3>
+        <div class="card-footer">
+        <p> ₹799.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Olive green cargo pant – W32 L37.jpg" >
+        <h3> Olive green cargo pant – W32 L37 </h3>
+        <div class="card-footer">
+        <p> ₹699.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Baggy cargo pants – MEDIUM.jpg" >
+        <h3> Baggy cargo pants – MEDIUM</h3>
+        <div class="card-footer">
+        <p> ₹699.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src= "C:\Users\arunk\Downloads\Black stretchable cargo pant – MEDIUM.jpg"  >
+        <h3> Black stretchable cargo pant – MEDIUM </h3>
+        <div class="card-footer">
+        <p> ₹799.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+    </div>
+      <div class="card">
+        <img src= "C:\Users\arunk\Downloads\Adidas CLIMALITE black track pants – XL.jpg"  >
+        <h3> Adidas CLIMALITE black track pants – XL </h3>
+        <div class="card-footer">
+        <p> ₹499.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Activewear sport track pant skinny – MEDIUM.jpg" >
+        <h3> Activewear sport track pant skinny – MEDIUM </h3>
+        <div class="card-footer">
+        <p> ₹399.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Argentina Home National Team adidas Jersey World Cup 2022 – XL.jpg" >
+        <h3> Argentina Home National Team adidas Jersey World Cup 2022 – XL </h3>
+        <div class="card-footer">
+        <p>  ₹799.00  </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\AC MILAN FOOTBALL JERSEY – LARGE.jpg" >
+        <h3> AC MILAN FOOTBALL JERSEY – LARGE </h3>
+        <div class="card-footer">
+        <p> ₹799.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Adidas originals Canwas Sneakers Shoes.jpg" >
+        <h3> Adidas originals Canwas Sneakers Shoes </h3>
+        <div class="card-footer">
+        <p> ₹999.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+         </div>
+    </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\Adidas Men’s Shoes Adidas Pulseboost Hd – UK10.5.jpg" >
+        <h3> Adidas Men’s Shoes Adidas Pulseboost Hd – UK10.5 </h3>
+        <div class="card-footer">
+        <p>  ₹999.00  </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src= "C:\Users\arunk\Downloads\New balance running shoes – UK6.jpg"  >
+        <h3> New balance running shoes – UK6 </h3>
+        <div class="card-footer">
+        <p> ₹999.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+      <div class="card">
+        <img src=  "C:\Users\arunk\Downloads\nike revolution 5 maroon running shoes -UK 7.jpg" >
+        <h3>  nike revolution 5 maroon running shoes -UK 7</h3>
+        <div class="card-footer">
+        <p>  ₹999.00 </p>
+        <button class="add-to-cart-btn" onclick="addToCart('PRODUCT NAME')">Add to Cart</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Section -->
+  <div id="login" class="content-section">
+    <h2 style="text-align: center;">Login</h2>
+    <div class="form-container">
+      <form onsubmit="event.preventDefault(); alert('Logged in!');">
+        <input type="email" placeholder="Email" required>
+        <input type="password" placeholder="Password" required>
+        <a class="forgot-password" onclick="alert('Password reset link sent to your email!')">Forgot Password?</a>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- About Section -->
+  <div id="about" class="content-section">
+    <h2>About Thrift Ease</h2>
+    <p>Thrift Ease is an online thrift store focused on sustainability and affordability. We give new life to gently used fashion, helping reduce waste while keeping you stylish.</p>
+  </div>
+
+  <!-- Contact Section -->
+  <div id="contact" class="content-section">
+    <h2 style="text-align: center;">Contact Us</h2>
+    <div class="form-container">
+      <form onsubmit="event.preventDefault(); alert('Thank you for reaching out!');">
+        <input type="text" placeholder="Your Name" required>
+        <input type="email" placeholder="Your Email" required>
+        <textarea rows="4" placeholder="Your Message" required></textarea>
+        <button type="submit">Send Message</button>
+      </form>
+      <p style="text-align:center; margin-top:15px; font-size:14px;">
+        You can also reach us at: <br>
+        📧 support@thriftease.com <br>
+        📞 +91-9876543210
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 Thrift Ease. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      const sidebar = document.getElementById("sidebar");
+      sidebar.style.left = sidebar.style.left === "0px" ? "-220px" : "0px";
+    }
+
+    function toggleSearch() {
+      const searchBox = document.getElementById("searchBox");
+      searchBox.classList.toggle("active");
+      const input = document.getElementById("searchInput");
+      if (searchBox.classList.contains("active")) {
+        input.focus();
+      }
+    }
+
+    function showSection(id) {
+      const sections = document.querySelectorAll(".content-section");
+      sections.forEach(section => section.classList.remove("active-section"));
+      document.getElementById(id).classList.add("active-section");
+      document.getElementById("sidebar").style.left = "-220px";
+    }
+
+    function addToCart(productName) {
+      alert(productName + " has been added to your cart.");
+    }
+  </script>
+</body>
+</html>
